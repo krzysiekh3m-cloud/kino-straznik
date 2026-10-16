@@ -1,5 +1,7 @@
 {
   "initialized": true,
   "screenings": {},
-  "pending": []
+  "pending": [],
+  "lastHeartbeat": "2026-10-16",
+  "errorSince": 0
 }

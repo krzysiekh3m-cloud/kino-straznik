@@ -1,0 +1,35 @@
+name: Strażnik Diuny IMAX
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # GitHub uruchamia co ~5 min (bywa z opóźnieniem)
+  workflow_dispatch:         # ręczne uruchomienie z zakładki Actions
+
+permissions:
+  contents: write            # zapis pliku stanu z powrotem do repo
+
+concurrency:
+  group: straznik
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Sprawdź seanse (4 razy co minutę)
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          CHECKS: 4
+          INTERVAL: 60
+        run: node straznik.js
+      - name: Zapisz stan
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add stan.json
+          git diff --cached --quiet || (git commit -m "stan $(date -u +%FT%TZ)" && git pull --rebase && git push)

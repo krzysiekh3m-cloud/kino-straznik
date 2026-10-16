@@ -8,6 +8,8 @@ Liczą się tylko **dobre miejsca: od 7. rzędu wzwyż** (rząd 1 jest najbliże
 
 W godzinach **23:00–7:00** nic nie wysyła. Zebrane w nocy zmiany przychodzą rano w jednym powiadomieniu, razem z aktualną liczbą wolnych miejsc. Kliknięcie w powiadomienie otwiera stronę zakupu biletów.
 
+**Czy strażnik żyje:** codziennie ok. 7:00 przychodzi ciche „Strażnik Diuny: żyję” z aktualnym stanem seansów. Brak tego meldunku rano = padł cron-job.org, GitHub albo skrypt. Jeśli Helios nie odpowiada (albo zmienił stronę) dłużej niż godzinę, przychodzi „Strażnik Diuny NIE DZIAŁA” (najwyżej raz na dobę), a po naprawie „znów działa”.
+
 Ustawienia (daty, pierwszy rząd, cisza nocna, próg miejsc) są w `CONFIG` na górze `straznik.js`.
 
 ## Uruchomienie (jednorazowo)

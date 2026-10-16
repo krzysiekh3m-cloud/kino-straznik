@@ -31,6 +31,8 @@ const CONFIG = {
   quietFrom: 23,         // cisza nocna od 23:00…
   quietTo: 7,            // …do 7:00 (czas polski)
   timeZone: 'Europe/Warsaw',
+  errorAlertMin: 60,     // ostrzeżenie, gdy Helios nie odpowiada / zmienił API dłużej niż tyle minut…
+  errorRepeatH: 24,      // …i potem najwyżej raz na tyle godzin
 };
 
 const CMS = 'https://api.helios.pl/api/v1';
@@ -55,6 +57,8 @@ async function fetchScreenings() {
   const movieKeys = Object.entries(data.movies || {})
     .filter(([, m]) => CONFIG.movie.test(m.title) || CONFIG.movie.test(m.titleOriginal || ''))
     .map(([key]) => key);
+  // Film jest w repertuarze od przedsprzedaży – jego brak to raczej zmiana API niż „nie ma seansów”.
+  if (!movieKeys.length) throw new Error('nie znaleziono filmu w repertuarze Heliosa (zmiana API?)');
 
   const list = [];
   for (const byMovie of Object.values(data.screenings || {})) {
@@ -166,11 +170,12 @@ async function check(state) {
   const screenings = await fetchScreenings();
   const events = [];
   const firstRun = !state.initialized;
+  let failed = 0;
 
   for (const s of screenings) {
     let info;
     try { info = await fetchSeats(s.id); }
-    catch (e) { console.warn(`Nie udało się pobrać miejsc dla ${label(s)}: ${e.message}`); continue; }
+    catch (e) { console.warn(`Nie udało się pobrać miejsc dla ${label(s)}: ${e.message}`); failed++; continue; }
 
     const prev = state.screenings[s.id];
     const entry = { id: s.id, time: s.time, version: s.version, seats: info.good, rows: info.rows, total: info.total, lastFreed: prev?.lastFreed || 0 };
@@ -184,6 +189,7 @@ async function check(state) {
     }
     state.screenings[s.id] = entry;
   }
+  if (screenings.length && failed === screenings.length) throw new Error('nie udało się pobrać miejsc dla żadnego seansu');
 
   // Seanse, których już nie ma w repertuarze (minęły / zdjęte) — usuwamy ze stanu.
   const current = new Set(screenings.map(s => s.id));
@@ -222,6 +228,19 @@ async function flush(state, events) {
     state.pending.push(...real.map(e => ({ text: describe(e), id: e.s.id })));
     if (real.length) console.log(`Cisza nocna – odłożono ${real.length} zdarzeń do rana.`);
     return;
+  }
+
+  // Poranny meldunek „żyję” (raz dziennie, cichy). Jego brak rano = padł cron-job.org, GitHub albo strażnik.
+  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: CONFIG.timeZone }).format(now);
+  if (state.lastHeartbeat !== today) {
+    const lines = Object.values(state.screenings).map(s => `${label(s)} – ${seatsText(s)}`);
+    await notify({
+      title: 'Strażnik Diuny: żyję',
+      message: lines.length ? 'Seanse IMAX 26–30.12:\n' + lines.join('\n') : 'Seansów IMAX 26–30.12 jeszcze nie ma w sprzedaży.',
+      priority: 2,
+      tags: 'white_check_mark',
+    });
+    state.lastHeartbeat = today;
   }
 
   // Rano: jedno zbiorcze powiadomienie z nocy, z aktualną liczbą miejsc.
@@ -268,13 +287,36 @@ async function main() {
     try {
       const events = await check(state);
       await flush(state, events);
+      if (state.errorSince && state.lastErrorAlert > state.errorSince) {
+        await notify({ title: 'Strażnik Diuny znów działa', message: 'Helios znowu odpowiada, pilnuję dalej.', priority: 3, tags: 'white_check_mark' });
+      }
+      state.errorSince = 0;
       saveState(state);
       const summary = Object.values(state.screenings).map(s => `${label(s)}: ${s.seats}/${s.total} [${rowsText(s.rows)}]`).join(' | ');
       console.log(`${new Date().toISOString()} OK – ${summary || 'brak seansów IMAX'}`);
     } catch (e) {
       console.error(`${new Date().toISOString()} Błąd: ${e.message}`);
+      await alertOnError(state, e).catch(err => console.error(`Nie wysłano ostrzeżenia: ${err.message}`));
+      saveState(state);
     }
   }
+}
+
+// Błąd trwa dłużej niż errorAlertMin → ostrzeżenie na telefon (poza ciszą nocną, najwyżej co errorRepeatH).
+async function alertOnError(state, e) {
+  const now = Date.now();
+  state.errorSince = state.errorSince || now;
+  const minutes = Math.round((now - state.errorSince) / 60000);
+  if (minutes < CONFIG.errorAlertMin || isQuiet()) return;
+  if (now - (state.lastErrorAlert || 0) < CONFIG.errorRepeatH * 3600000) return;
+  await notify({
+    title: 'Strażnik Diuny NIE DZIAŁA',
+    message: `Od ${minutes} min nie mogę sprawdzić Heliosa: ${e.message}\nDopóki to nie wróci, cisza nie znaczy „brak biletów”. Sprawdzaj ręcznie albo napraw strażnika.`,
+    click: 'https://helios.pl/gdynia/kino-helios',
+    priority: 4,
+    tags: 'warning',
+  });
+  state.lastErrorAlert = now;
 }
 
 if (require.main === module) main();

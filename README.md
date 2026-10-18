@@ -1,7 +1,7 @@
 # Strażnik biletów — Diuna: Część trzecia, IMAX, Helios Gdynia
 
 Co kilka minut sprawdza repertuar Heliosa (Centrum Riviera, Gdynia) i wysyła powiadomienie na telefon (ntfy), gdy:
-- pojawi się **nowy seans IMAX** w dniach **26–30.12.2026**,
+- pojawi się **nowy seans IMAX** w dniach **21–23.12.2026**,
 - na seansie, który był wyprzedany lub prawie wyprzedany, **zwolnią się miejsca**.
 
 Liczą się tylko **dobre miejsca: od 7. rzędu wzwyż** (rząd 1 jest najbliżej ekranu), bez miejsc dla wózków. W powiadomieniu widać, w których rzędach są wolne miejsca, np. `rz. 9: 4, rz. 12: 2`. „Prawie wyprzedany” oznacza mniej niż 10 dobrych miejsc. Powiadomienie o zwolnionych miejscach przychodzi najwyżej raz na 30 minut na dany seans.

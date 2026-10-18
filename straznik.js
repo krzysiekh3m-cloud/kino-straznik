@@ -1,4 +1,4 @@
-// Strażnik biletów: Diuna: Część trzecia, IMAX, Helios Gdynia (Centrum Riviera), 26–30.12.2026.
+// Strażnik biletów: Diuna: Część trzecia, IMAX, Helios Gdynia (Centrum Riviera), 21–23.12.2026.
 // Sprawdza API Heliosa i wysyła powiadomienie push przez ntfy.sh, gdy:
 //  - pojawi się nowy seans IMAX (ruszyła sprzedaż kolejnych dni),
 //  - na seansie, który był (prawie) wyprzedany, zwolnią się miejsca.
@@ -23,8 +23,8 @@ const CONFIG = {
   cinemaId: '0bdb21cd-cf7d-4efb-829f-d1913a666b83',       // Helios Gdynia w restapi.helios.pl
   movie: /diuna.*trzecia|dune.*part three/i,              // tytuł lub tytuł oryginalny
   onlyImax: true,
-  dateFrom: '2026-12-26', // interesują nas tylko seanse w tym przedziale dat (włącznie)
-  dateTo: '2026-12-30',
+  dateFrom: '2026-12-21', // interesują nas tylko seanse w tym przedziale dat (włącznie)
+  dateTo: '2026-12-23',
   minRow: 7,             // liczymy tylko miejsca od tego rzędu wzwyż (rząd 1 = najbliżej ekranu)
   lowSeats: 10,          // poniżej tylu dobrych wolnych miejsc seans uznajemy za "prawie wyprzedany"
   freedCooldownMin: 30,  // najwyżej jedno powiadomienie "zwolniły się" na seans na tyle minut
@@ -236,7 +236,7 @@ async function flush(state, events) {
     const lines = Object.values(state.screenings).map(s => `${label(s)} – ${seatsText(s)}`);
     await notify({
       title: 'Strażnik Diuny: żyję',
-      message: lines.length ? 'Seanse IMAX 26–30.12:\n' + lines.join('\n') : 'Seansów IMAX 26–30.12 jeszcze nie ma w sprzedaży.',
+      message: lines.length ? 'Seanse IMAX 21–23.12:\n' + lines.join('\n') : 'Seansów IMAX 21–23.12 jeszcze nie ma w sprzedaży.',
       priority: 2,
       tags: 'white_check_mark',
     });

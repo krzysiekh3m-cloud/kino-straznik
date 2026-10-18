@@ -230,14 +230,14 @@ async function flush(state, events) {
     return;
   }
 
-  // Poranny meldunek „żyję” (raz dziennie, cichy). Jego brak rano = padł cron-job.org, GitHub albo strażnik.
+  // Poranny meldunek „żyję” (raz dziennie, priorytet 4). Jego brak rano = padł cron-job.org, GitHub albo strażnik.
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: CONFIG.timeZone }).format(now);
   if (state.lastHeartbeat !== today) {
     const lines = Object.values(state.screenings).map(s => `${label(s)} – ${seatsText(s)}`);
     await notify({
       title: 'Strażnik Diuny: żyję',
       message: lines.length ? 'Seanse IMAX 21–23.12:\n' + lines.join('\n') : 'Seansów IMAX 21–23.12 jeszcze nie ma w sprzedaży.',
-      priority: 2,
+      priority: 4,
       tags: 'white_check_mark',
     });
     state.lastHeartbeat = today;

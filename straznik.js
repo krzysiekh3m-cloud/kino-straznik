@@ -288,7 +288,7 @@ async function main() {
       const events = await check(state);
       await flush(state, events);
       if (state.errorSince && state.lastErrorAlert > state.errorSince) {
-        await notify({ title: 'Strażnik Diuny znów działa', message: 'Helios znowu odpowiada, pilnuję dalej.', priority: 3, tags: 'white_check_mark' });
+        await notify({ title: 'Strażnik Diuny znów działa', message: 'Helios znowu odpowiada, pilnuję dalej.', priority: 4, tags: 'white_check_mark' });
       }
       state.errorSince = 0;
       saveState(state);

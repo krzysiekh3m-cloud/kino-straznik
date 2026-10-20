@@ -31,5 +31,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add stan.json
-          git diff --cached --quiet || (git commit -m "stan $(date -u +%FT%TZ)" && git pull --rebase && git push)
+          # stan z tego przebiegu jest najświeższy - przy kolizji z innym przebiegiem nadpisujemy, nie scalamy
+          cp stan.json /tmp/stan.json
+          for i in 1 2 3; do
+            git fetch -q origin main && git reset -q --hard origin/main
+            cp /tmp/stan.json stan.json
+            git add stan.json
+            git diff --cached --quiet && exit 0
+            git commit -q -m "stan $(date -u +%FT%TZ)" && git push -q origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1

@@ -23,6 +23,7 @@ const CONFIG = {
   cinemaId: '0bdb21cd-cf7d-4efb-829f-d1913a666b83',       // Helios Gdynia w restapi.helios.pl
   movie: /diuna.*trzecia|dune.*part three/i,              // tytuł lub tytuł oryginalny
   onlyImax: true,
+  version: /napis/i,     // tylko seanse z napisami (Helios podaje "Napisy" albo "Dubbing")
   dateFrom: '2026-12-21', // interesują nas tylko seanse w tym przedziale dat (włącznie)
   dateTo: '2026-12-23',
   minRow: 7,             // liczymy tylko miejsca od tego rzędu wzwyż (rząd 1 = najbliżej ekranu)
@@ -66,6 +67,7 @@ async function fetchScreenings() {
       for (const s of byMovie[key]?.screenings || []) {
         const imax = s.cinemaScreen?.feature === 'IMAX';
         if (CONFIG.onlyImax && !imax) continue;
+        if (CONFIG.version && !CONFIG.version.test(s.moviePrint?.speakingTypeLabel || '')) continue;
         const day = s.timeFrom.slice(0, 10);
         if (day < CONFIG.dateFrom || day > CONFIG.dateTo) continue;
         list.push({
@@ -236,7 +238,7 @@ async function flush(state, events) {
     const lines = Object.values(state.screenings).map(s => `${label(s)} – ${seatsText(s)}`);
     await notify({
       title: 'Strażnik Diuny: żyję',
-      message: lines.length ? 'Seanse IMAX 21–23.12:\n' + lines.join('\n') : 'Seansów IMAX 21–23.12 jeszcze nie ma w sprzedaży.',
+      message: lines.length ? 'Seanse IMAX z napisami 21–23.12:\n' + lines.join('\n') : 'Seansów IMAX z napisami 21–23.12 jeszcze nie ma w sprzedaży.',
       priority: 4,
       tags: 'white_check_mark',
     });
